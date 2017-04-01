@@ -4,6 +4,8 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var common = require('./common.js');
 
+
+var port = process.env.PORT || 8080;
 var size = common.size;
 var colors = common.colors;
 
@@ -46,6 +48,6 @@ io.on('connection', function(socket) {
     });
 });
 
-http.listen(3000, function() {
-    console.log('listening on *:3000');
+http.listen(port, function() {
+    console.log('listening on *:' + port);
 });

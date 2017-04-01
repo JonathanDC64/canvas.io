@@ -34,8 +34,14 @@ var mousePos = {
     y: 0.0
 }
 
+//MAx size of tile matrix
+var size = common.size;
+
 //buffer holding the color of every pixel
-var displayBuffer = [];
+var displayBuffer = null;
+
+//Socket server connection
+var socket = io();
 
 
 function init() {
@@ -50,22 +56,24 @@ function init() {
         colors[i] = numToHex(colors[i])
     }
 
-    //preallocate memory for buffer
-    var white = 0;
-    for (var i = 0; i < 512; i++) {
-        var row = [];
-        for (var j = 0; j < 512; j++) {
-            row.push(Math.floor(Math.random() * colors.length));
-        }
-        displayBuffer.push(row);
-    }
-
     canvas.addEventListener('mousemove', mouseMoveListener, false);
     canvas.addEventListener('mousedown', mouseDownListener, false);
     window.addEventListener("mouseup", mouseUpListener, false);
 
     colorPickerBuffer = createRenderBuffer();
     tilesBuffer = createRenderBuffer();
+
+
+    //Get initial display matrix from server
+    socket.on('tiles', function(buffer) {
+        displayBuffer = buffer;
+    });
+
+    //Update displayBuffer when a user sets a tile
+    socket.on('tileset', function(tile) {
+        displayBuffer[tile.y][tile.x] = tile.color;
+    });
+
 
     //initialize game loop
     setInterval(update, 1000.0 / 60.0);
@@ -115,9 +123,9 @@ function scrollTiles() {
         offsetX -= dx;
         offsetY -= dy;
         firstX = mousePos.x;
-        firstY = mousePos.y
+        firstY = mousePos.y;
 
-        if (dx > 0 || dy > 0) {
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
             drag = true;
         }
     }
@@ -128,12 +136,12 @@ function scrollTiles() {
 }
 
 function tileClick() {
-    var tilePos = {
+    var tile = {
         x: Math.floor(((mousePos.x - squareHeight) + offsetX) / tileDimension),
-        y: Math.floor((mousePos.y + offsetY) / tileDimension)
+        y: Math.floor((mousePos.y + offsetY) / tileDimension),
+        color: selectedColor
     }
-    displayBuffer[tilePos.y][tilePos.x] = 0;
-    console.log("click: x : " + tilePos.x + " y : " + tilePos.y);
+    socket.emit('tile', tile);
 }
 
 
@@ -176,33 +184,35 @@ function renderColorPicker() {
 var tilesBuffer = null;
 
 function renderTiles() {
-    var buffer_ctx = tilesBuffer.buffer_ctx;
-    buffer_ctx.clearRect(0, 0, canvas.width, canvas.height);
-    buffer_ctx.beginPath();
+    if (displayBuffer) {
+        var buffer_ctx = tilesBuffer.buffer_ctx;
+        buffer_ctx.clearRect(0, 0, canvas.width, canvas.height);
+        buffer_ctx.beginPath();
 
-    var startX = Math.floor(offsetX / tileDimension);
-    var startY = Math.floor(offsetY / tileDimension);
-    var currentX = 0;
-    var currentY = 0;
-    var width = (canvas.width - squareHeight) / tileDimension;
-    var height = canvas.height / tileDimension;
+        var startX = Math.floor(offsetX / tileDimension);
+        var startY = Math.floor(offsetY / tileDimension);
+        var currentX = 0;
+        var currentY = 0;
+        var width = (canvas.width - squareHeight) / tileDimension;
+        var height = canvas.height / tileDimension;
 
-    for (var row = startY; row < startY + height + 1; row++) {
-        currentX = squareHeight;
-        for (var col = startX; col < startX + width + 1; col++) {
-            buffer_ctx.fillStyle = colors[displayBuffer[row][col]];
-            buffer_ctx.fillRect(
-                Math.round(currentX - (offsetX % tileDimension)),
-                Math.round(currentY - (offsetY % tileDimension)),
-                tileDimension,
-                tileDimension
-            );
-            currentX += tileDimension;
+        for (var row = startY; row < startY + height + 1; row++) {
+            currentX = squareHeight;
+            for (var col = startX; col < startX + width + 1; col++) {
+                buffer_ctx.fillStyle = colors[displayBuffer[row][col]];
+                buffer_ctx.fillRect(
+                    Math.round(currentX - (offsetX % tileDimension)),
+                    Math.round(currentY - (offsetY % tileDimension)),
+                    tileDimension,
+                    tileDimension
+                );
+                currentX += tileDimension;
+            }
+            currentY += tileDimension;
         }
-        currentY += tileDimension;
-    }
 
-    ctx.drawImage(tilesBuffer, 0, 0);
+        ctx.drawImage(tilesBuffer, 0, 0);
+    }
 }
 
 

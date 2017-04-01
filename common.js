@@ -34,4 +34,6 @@
         return parseInt(color, 16);
     }
 
+    exports.size = 512;
+
 }(typeof exports === 'undefined' ? this.common = {} : exports));

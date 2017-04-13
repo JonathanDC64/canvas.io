@@ -32,15 +32,17 @@ io.on('connection', function(socket) {
 
 
     socket.on('tile', function(tile) {
-        var _x = tile.x % size;
-        var _y = tile.y % size;
-        var _color = tile.color % colors.length;
-        displayBuffer[_y][_x] = _color;
-        io.sockets.emit('tileset', {
-            x: _x,
-            y: _y,
-            color: _color
-        });
+		if(tile != null && tile.x != null && tile.y != null && tile.color != null){
+			var _x = tile.x % size;
+			var _y = tile.y % size;
+			var _color = tile.color % colors.length;
+			displayBuffer[_y][_x] = _color;
+			io.sockets.emit('tileset', {
+				x: _x,
+				y: _y,
+				color: _color
+			});
+		}
     });
 
     socket.on('disconnect', function() {

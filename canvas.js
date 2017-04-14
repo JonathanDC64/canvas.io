@@ -102,7 +102,7 @@ function mouseDownListener(evt) {
 
 function mouseUpListener(evt) {
     mouseDown = false;
-    if (!drag)
+    if (!drag && mousePos.x > squareHeight)
         tileClick();
     drag = false;
 }

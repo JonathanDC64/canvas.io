@@ -38,7 +38,14 @@ var mousePos = {
 var size = common.size;
 
 //buffer holding the color of every pixel
-var displayBuffer = null;
+var displayBuffer = [];
+for (var i = 0; i < size; i++) {
+    var row = [];
+    for (var j = 0; j < size; j++) {
+        row.push(0);
+    }
+    displayBuffer.push(row);
+}
 
 //Socket server connection
 var socket = io();
